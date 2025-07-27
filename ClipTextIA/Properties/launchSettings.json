@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "ClipTextIA (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "ClipTextIA (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
