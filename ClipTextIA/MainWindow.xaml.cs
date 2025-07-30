@@ -19,16 +19,18 @@ namespace ClipTextIA
 {
     public sealed partial class MainWindow : Window
     {
-        private readonly IKeyboardMouseEvents _hotkeyService;
-        private readonly IHotkeyManager _hotkeyManager;
         private readonly IClipboardHelper _clipboardHelper;
         private readonly IGeminiService _geminiService;
         private readonly IToastService _toastService;
         private readonly IActiveWindowInfoService _activeWindowInfoService;
-        private IKeyboardMouseEvents _globalHook;
-        private bool _hotkeyActive = false;
+        private readonly IHotkeyService _hotkeyService;
 
-        public MainWindow(IHotkeyManager hotkeyManager, IClipboardHelper clipboardHelper, IGeminiService geminiService, IToastService toastService, IActiveWindowInfoService activeWindowInfoService)
+        public MainWindow(
+            IClipboardHelper clipboardHelper, 
+            IGeminiService geminiService, 
+            IToastService toastService, 
+            IActiveWindowInfoService activeWindowInfoService, 
+            IHotkeyService hotkeyService)
         {
             this.InitializeComponent();
 
@@ -41,118 +43,76 @@ namespace ClipTextIA
 
 
 
-            _hotkeyManager = hotkeyManager;
             _clipboardHelper = clipboardHelper;
             _geminiService = geminiService;
             _toastService = toastService;
             _activeWindowInfoService = activeWindowInfoService;
+            _hotkeyService = hotkeyService;
             this.Closed += MainWindow_Closed;
-            _globalHook = Hook.GlobalEvents();
 
-            var timer = new DispatcherTimer();
-            timer.Interval = TimeSpan.FromSeconds(5);
-            timer.Tick += (s, e) =>
-            {
-                timer.Stop();
-                if (!_hotkeyActive)
-                {
-                    RegisterOrUnRegisterHotkey();
-                }
-            };
-            timer.Start();
+            _hotkeyService.AutoRegisterHotkeyAfter(TimeSpan.FromSeconds(5), OnActionHotkey, (e) => e.Control && e.KeyCode == Keys.M); 
 
         }
 
-
-        public void RegisterHotkey(Action onHotkeyPressed)
-        {
-            _globalHook = Hook.GlobalEvents();
-            _globalHook.KeyDown += (sender, e) =>
-            {
-                if (e.Control && e.KeyCode == Keys.M)
-                {
-                    onHotkeyPressed?.Invoke();
-                    e.Handled = true;
-                }
-            };
-        }
-
-        public void UnregisterHotkey()
-        {
-            if (_globalHook != null)
-            {
-                _globalHook.KeyDown -= GlobalHook_KeyDownHandler;
-                _globalHook.Dispose();
-                _globalHook = null;
-            }
-        }
-
-        // Para poder eliminar correctamente el handler, lo extraemos a un método:
         private void GlobalHook_KeyDownHandler(object sender, KeyEventArgs e)
         {
-            if (e.Control && e.KeyCode == Keys.M)
+            OnActionHotkey();
+            e.Handled = true;
+        }
+
+        public void OnActionHotkey()
+        {
+            _ = EnqueueAsync(async () =>
             {
-                _ = EnqueueAsync(async () =>
+                string app = _activeWindowInfoService.GetActiveWindowProcessName();
+                string windowTitle = _activeWindowInfoService.GetActiveWindowTitle();
+
+                string clipboardText = await _clipboardHelper.GetTextAsync();
+                if (!string.IsNullOrWhiteSpace(clipboardText))
                 {
-                    string app = _activeWindowInfoService.GetActiveWindowProcessName();
-                    string windowTitle = _activeWindowInfoService.GetActiveWindowTitle();
+                    string userPrompt = PromptBox.Text;
+                    string contextualPrompt =
+                        $"{userPrompt}\n\n" +
+                        "Sin mencionar explícitamente esta información en la respuesta, ten en cuenta que el texto será pegado en la aplicación " +
+                        $"\"{app}\", la cual está abierta en una ventana con el título \"{windowTitle}\". Usa este contexto para adaptar y mejorar el texto de forma adecuada.\n";
 
-                    string clipboardText = await _clipboardHelper.GetTextAsync();
-                    if (!string.IsNullOrWhiteSpace(clipboardText))
-                    {
-                        string userPrompt = PromptBox.Text;
-                        string contextualPrompt =
-                            $"{userPrompt}\n\n" +
-                            "Sin mencionar explícitamente esta información en la respuesta, ten en cuenta que el texto será pegado en la aplicación " +
-                            $"\"{app}\", la cual está abierta en una ventana con el título \"{windowTitle}\". Usa este contexto para adaptar y mejorar el texto de forma adecuada.\n";
+                    string improved = await _geminiService.ImproveTextAsync(contextualPrompt, clipboardText);
+                    await LoadMarkdownAndCopyToClipboardAsync(improved);
 
-                        string improved = await _geminiService.ImproveTextAsync(contextualPrompt, clipboardText);
-                        await LoadMarkdownAndCopyToClipboardAsync(improved);
+                    var sim = new InputSimulator();
+                    sim.Keyboard.ModifiedKeyStroke(VirtualKeyCode.CONTROL, VirtualKeyCode.VK_V);
 
-                        var sim = new InputSimulator();
-                        sim.Keyboard.ModifiedKeyStroke(VirtualKeyCode.CONTROL, VirtualKeyCode.VK_V);
-
-                        _toastService.ShowToast(
-                            "\u2705 Texto mejorado y pegado \U0001F4CB\n" +
-                            "\U0001F5A5\uFE0F App: " + app + "\n" +
-                            "\U0001FA9F Ventana: " + windowTitle
-                        );
-                    }
-                    else
-                    {
-                        _toastService.ShowToast("\u26A0 No hay texto en el portapapeles");
-                    }
-                });
-
-                e.Handled = true;
-            }
+                    _toastService.ShowToast(
+                        "\u2705 Texto mejorado y pegado \U0001F4CB\n" +
+                        "\U0001F5A5\uFE0F App: " + app + "\n" +
+                        "\U0001FA9F Ventana: " + windowTitle
+                    );
+                }
+                else
+                {
+                    _toastService.ShowToast("\u26A0 No hay texto en el portapapeles");
+                }
+            });
         }
 
         public void ActivateHotkey_Click(object sender, RoutedEventArgs e)
         {
-            RegisterOrUnRegisterHotkey();
+            _hotkeyService.ToggleHotkey(
+                () => OnActionHotkey(),
+                status =>
+                {
+                    if (status == "activado")
+                    {
+                        _toastService.ShowToast("\u2705 Atajo activado (Ctrl+M)");
+                        ActivateHotkeyButton.Content = "Desactivar Hotkey";
+                    }
+                    else
+                    {
+                        _toastService.ShowToast("\u26D4 Atajo desactivado");
+                        ActivateHotkeyButton.Content = "Activar Hotkey";
+                    }
+                });
         }
-
-        private void RegisterOrUnRegisterHotkey()
-        {
-            if (_hotkeyActive)
-            {
-                UnregisterHotkey();
-                _toastService.ShowToast("\u26D4 Atajo desactivado");
-                _hotkeyActive = false;
-                ActivateHotkeyButton.Content = "Activar Hotkey";
-
-            }
-            else
-            {
-                _globalHook = Hook.GlobalEvents();
-                _globalHook.KeyDown += GlobalHook_KeyDownHandler;
-                _toastService.ShowToast("\u2705 Atajo activado (Ctrl+M)");
-                _hotkeyActive = true;
-                ActivateHotkeyButton.Content = "Desactivar Hotkey";
-            }
-        }
-
 
         private async Task LoadMarkdownAndCopyToClipboardAsync(string markdown)
         {
@@ -227,7 +187,7 @@ namespace ClipTextIA
 
         private void MainWindow_Closed(object sender, WindowEventArgs args)
         {
-            _globalHook?.Dispose();
+            _hotkeyService?.UnregisterHotkey();
         }
     }
 }

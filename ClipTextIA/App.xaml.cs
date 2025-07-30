@@ -52,7 +52,7 @@ namespace ClipTextIA
             var builder = new ContainerBuilder();
 
             builder.RegisterType<GeminiService>().As<IGeminiService>().SingleInstance();
-            builder.RegisterType<HotkeyManager>().As<IHotkeyManager>().SingleInstance();
+            builder.RegisterType<HotkeyService>().As<IHotkeyService>().SingleInstance();
             builder.RegisterType<ClipboardHelper>().As<IClipboardHelper>().SingleInstance();
             builder.RegisterType<ToastService>().As<IToastService>().SingleInstance();
             builder.RegisterType<ActiveWindowInfoService>().As<IActiveWindowInfoService>().SingleInstance();
