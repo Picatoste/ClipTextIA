@@ -61,8 +61,9 @@ git clone https://github.com/tuusuario/ClipTextIA.git
 
 ## 🧑‍💻 Créditos
 
-Desarrollado por [Tu Nombre](https://github.com/picatoste) 
-Con ❤️ para la productividad y la IA.
+Desarrollado por [David Benito](https://github.com/picatoste) 
+Si te ha resultado útil, ¡invítame una cerveza! 🍺  
+[https://buymeacoffee.com/picatoste](https://buymeacoffee.com/picatoste)
 
 ---
 
