@@ -1,5 +1,6 @@
 using InputSimulatorStandard;
 using InputSimulatorStandard.Native;
+using Markdig;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using System;
@@ -84,12 +85,12 @@ namespace ClipTextIA
         {
           string userPrompt = PromptBox.Text;
           string contextualPrompt = $@"
-            Eres un experto en redacción de textos. Tu tarea es reformular el texto proporcionado según estas directrices:
+            Eres un experto en redacción de textos. Tu tarea es mejorar el texto proporcionado, sin modificar mucho la estructura y según estas directrices:
 
-            - El texto reformulado será insertado en un campo de entrada de una aplicación.
-            - No añadas explicaciones, comentarios ni texto adicional; responde solo con el texto reformulado.
+            - El texto mejorado será insertado en un campo de entrada de una aplicación.
+            - Responde solo con el texto mejorado.
             - Si la aplicación lo permite, el texto puede estar en HTML, Markdown o texto plano. Debes deducir el formato correcto según el contexto.
-            - Si la aplicación destino soporta HTML, prioriza usar etiquetas HTML para el formato (ej. <b>, <i>, <p>, <br>).
+            - Si la aplicación destino soporta HTML, prioriza usar etiquetas HTML para el formato (ej. <b>, <i>, <p>, <br>). En caso de que la aplicación no soporte HTML o tengas dudas prioriza entonces texto plano.
             - La aplicación destino es: ""{app}"".
             - El título de la ventana de la aplicación es: ""{windowTitle}"".
             ";
@@ -152,17 +153,15 @@ namespace ClipTextIA
 
     private async Task LoadMarkdownAndCopyToClipboardAsync(string markdown)
     {
-      // Convertir Markdown a HTML en hilo background
-      //string html = await Task.Run(() => Markdown.ToHtml(markdown));
-      string html = markdown;
+      string plainText = await Task.Run(() => Markdown.ToPlainText(markdown));
+      string html = await Task.Run(() => Markdown.ToHtml(markdown));
 
-      // Actualizar WebView2 y copiar HTML al portapapeles en hilo UI
       await EnqueueAsync(async () =>
       {
         await MyWebView.EnsureCoreWebView2Async(null);
         MyWebView.NavigateToString($"<html><body>{html}</body></html>");
 
-        CopyToClipboard(html);
+        CopyToClipboard(plainText, html);
       });
     }
 
@@ -187,20 +186,12 @@ namespace ClipTextIA
       return tcs.Task;
     }
 
-    private void CopyToClipboard(string texto)
+    private void CopyToClipboard(string plainText, string html)
     {
       var dataPackage = new DataPackage();
-
-      if (IsHtml(texto))
-      {
-        string htmlClipboardFormat = HtmlClipboardFormat(texto);
-        dataPackage.SetData(StandardDataFormats.Html, texto);
-      }
-      else
-      {
-        dataPackage.SetText(texto);
-      }
-
+      var htmlFormat = HtmlFormatHelper.CreateHtmlFormat(html);
+      dataPackage.SetHtmlFormat(htmlFormat);
+      dataPackage.SetText(plainText);
       Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
     }
 
@@ -213,32 +204,32 @@ namespace ClipTextIA
       return Regex.IsMatch(text, @"<[^>]+>");
     }
 
-    private string HtmlClipboardFormat(string htmlFragment)
-    {
-      const string Header =
-          "Version:0.9\r\n" +
-          "StartHTML:{0:00000000}\r\n" +
-          "EndHTML:{1:00000000}\r\n" +
-          "StartFragment:{2:00000000}\r\n" +
-          "EndFragment:{3:00000000}\r\n";
+    //private string HtmlClipboardFormat(string htmlFragment)
+    //{
+    //  const string Header =
+    //      "Version:0.9\r\n" +
+    //      "StartHTML:{0:00000000}\r\n" +
+    //      "EndHTML:{1:00000000}\r\n" +
+    //      "StartFragment:{2:00000000}\r\n" +
+    //      "EndFragment:{3:00000000}\r\n";
 
-      const string StartFragment = "<!--StartFragment-->";
-      const string EndFragment = "<!--EndFragment-->";
+    //  const string StartFragment = "<!--StartFragment-->";
+    //  const string EndFragment = "<!--EndFragment-->";
 
-      string pre = "<html><body>";
-      string post = "</body></html>";
+    //  string pre = "<html><body>";
+    //  string post = "</body></html>";
 
-      string html = pre + StartFragment + htmlFragment + EndFragment + post;
+    //  string html = pre + StartFragment + htmlFragment + EndFragment + post;
 
-      int startHTML = Header.Length;
-      int startFragment = startHTML + pre.Length + StartFragment.Length;
-      int endFragment = startFragment + htmlFragment.Length;
-      int endHTML = startHTML + html.Length;
+    //  int startHTML = Header.Length;
+    //  int startFragment = startHTML + pre.Length + StartFragment.Length;
+    //  int endFragment = startFragment + htmlFragment.Length;
+    //  int endHTML = startHTML + html.Length;
 
-      string header = string.Format(Header, startHTML, endHTML, startFragment, endFragment);
+    //  string header = string.Format(Header, startHTML, endHTML, startFragment, endFragment);
 
-      return header + html;
-    }
+    //  return header + html;
+    //}
 
     private void MainWindow_Closed(object sender, WindowEventArgs args)
     {

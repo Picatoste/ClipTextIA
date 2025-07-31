@@ -60,7 +60,7 @@
 
       <TextBox x:Name="ApiUrlBox"
              Header="URL del modelo"
-             PlaceholderText="https://openrouter.ai/api/v1/chat/completions"
+             PlaceholderText="https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash"
              Text="https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash"
              AcceptsReturn="False"
              TextWrapping="NoWrap"
