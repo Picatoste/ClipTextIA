@@ -3,37 +3,42 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+
 namespace ClipTextIA
 {
-  public class GeminiService : IPromptService
+  public class OpenRouterService : IPromptService
   {
     private static readonly HttpClient client = new HttpClient();
     private const string ErrorTag = "[$ERROR$]";
+
     public async Task<string> ImproveTextAsync(string apiKey, string apiUrl, string prompt, string text)
     {
       var requestBody = new
       {
-        contents = new[]
-          {
-            new {
-                parts = new[]
-                {
-                    new { text = prompt + "\n\n" + text }
-                }
-            }
+        model = "deepseek-chat",
+        messages = new[]
+        {
+          new { role = "system", content = prompt },
+          new { role = "user", content = text }
         }
       };
 
       var content = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
+      content.Headers.Add("Authorization", $"Bearer {apiKey}");
 
       try
       {
-        var response = await client.PostAsync($"{apiUrl}:generateContent?key={apiKey}", content);
+        var request = new HttpRequestMessage(HttpMethod.Post, apiUrl)
+        {
+          Content = content
+        };
+        request.Headers.Add("Authorization", $"Bearer {apiKey}");
+
+        var response = await client.SendAsync(request);
         var responseJson = await response.Content.ReadAsStringAsync();
 
         if (!response.IsSuccessStatusCode)
         {
-          // Intenta extraer el mensaje de error del JSON si está presente
           try
           {
             using var errorDoc = JsonDocument.Parse(responseJson);
@@ -52,10 +57,9 @@ namespace ClipTextIA
 
         using var doc = JsonDocument.Parse(responseJson);
         return doc.RootElement
-            .GetProperty("candidates")[0]
+            .GetProperty("choices")[0]
+            .GetProperty("message")
             .GetProperty("content")
-            .GetProperty("parts")[0]
-            .GetProperty("text")
             .GetString();
       }
       catch (Exception ex)

@@ -61,13 +61,13 @@
     <PublishTrimmed Condition="'$(Configuration)' != 'Debug'">True</PublishTrimmed>
     <GenerateAppInstallerFile>True</GenerateAppInstallerFile>
     <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
-    <PackageCertificateThumbprint>E1939353B161848F5A689574682A78413F7704F2</PackageCertificateThumbprint>
+    <PackageCertificateThumbprint>7077c8e8f55f8146e442428200812d5854286937</PackageCertificateThumbprint>
     <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
     <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
     <AppxSymbolPackageEnabled>False</AppxSymbolPackageEnabled>
     <GenerateTestArtifacts>True</GenerateTestArtifacts>
     <AppxBundle>Never</AppxBundle>
-    <AppInstallerUri>C:\Users\sr_be\Source\Repos\ClipTextIA\ClipTextIA\bin\x64\Release\net8.0-windows10.0.19041.0\win-x64\AppPackages\</AppInstallerUri>
+    <AppInstallerUri>D:\repos\ClipTextIA\ClipTextIA\bin\x64\Debug\net8.0-windows10.0.19041.0\AppPackages\</AppInstallerUri>
     <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
   </PropertyGroup>
 </Project>

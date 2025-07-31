@@ -9,7 +9,7 @@
 
   <Identity
     Name="31cc34b2-773c-4d97-99ae-72db1d61b1e5"
-    Publisher="CN=dbr"
+    Publisher="CN=ClipTextIA Signing"
     Version="1.0.1.0" />
 
   <mp:PhoneIdentity PhoneProductId="31cc34b2-773c-4d97-99ae-72db1d61b1e5" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>

@@ -33,8 +33,8 @@
                 MinWidth="300"
                 AcceptsReturn="True" 
                 TextWrapping="Wrap"
-                PlaceholderText="Escribe prompt aquí"
-                Text="Mejora el siguiente texto para que sea más claro y profesional, y agrega formato enriquecido usando etiquetas HTML como &lt;b&gt;, &lt;i&gt;, &lt;ul&gt;, &lt;li&gt;, etc. Mantén el significado original intacto. Devuelve solo el texto formateado sin explicaciones y usando emojis." />
+                PlaceholderText="Escribe tu añadido del prompt aquí"
+                Text="" />
 
             <Button 
                 x:Name="ActivateHotkeyButton"
@@ -45,10 +45,26 @@
                 VerticalAlignment="Top" />
         </Grid>
 
+
         <controls:WebView2 
             x:Name="MyWebView" 
             Grid.Row="1" 
             Visibility="Visible" />
+    <StackPanel Grid.Row="2" Orientation="Vertical" Margin="0,10,0,0">
+      <TextBox x:Name="ApiKeyBox"
+             Header="API Key"
+             PlaceholderText="Introduce tu clave de API"
+             Text=""
+             AcceptsReturn="False"
+             TextWrapping="NoWrap"/>
 
-    </Grid>
+      <TextBox x:Name="ApiUrlBox"
+             Header="URL del modelo"
+             PlaceholderText="https://openrouter.ai/api/v1/chat/completions"
+             Text="https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash"
+             AcceptsReturn="False"
+             TextWrapping="NoWrap"
+             Margin="0,5,0,0"/>
+    </StackPanel>
+  </Grid>
 </Window>
