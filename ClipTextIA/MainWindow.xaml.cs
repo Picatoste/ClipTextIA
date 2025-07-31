@@ -4,7 +4,6 @@ using Markdig;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using System;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Windows.ApplicationModel.DataTransfer;
@@ -194,42 +193,6 @@ namespace ClipTextIA
       dataPackage.SetText(plainText);
       Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
     }
-
-    private bool IsHtml(string text)
-    {
-      if (string.IsNullOrWhiteSpace(text))
-        return false;
-
-      // Busca cualquier etiqueta HTML simple: <cualquier_cosa>
-      return Regex.IsMatch(text, @"<[^>]+>");
-    }
-
-    //private string HtmlClipboardFormat(string htmlFragment)
-    //{
-    //  const string Header =
-    //      "Version:0.9\r\n" +
-    //      "StartHTML:{0:00000000}\r\n" +
-    //      "EndHTML:{1:00000000}\r\n" +
-    //      "StartFragment:{2:00000000}\r\n" +
-    //      "EndFragment:{3:00000000}\r\n";
-
-    //  const string StartFragment = "<!--StartFragment-->";
-    //  const string EndFragment = "<!--EndFragment-->";
-
-    //  string pre = "<html><body>";
-    //  string post = "</body></html>";
-
-    //  string html = pre + StartFragment + htmlFragment + EndFragment + post;
-
-    //  int startHTML = Header.Length;
-    //  int startFragment = startHTML + pre.Length + StartFragment.Length;
-    //  int endFragment = startFragment + htmlFragment.Length;
-    //  int endHTML = startHTML + html.Length;
-
-    //  string header = string.Format(Header, startHTML, endHTML, startFragment, endFragment);
-
-    //  return header + html;
-    //}
 
     private void MainWindow_Closed(object sender, WindowEventArgs args)
     {
